@@ -1,0 +1,23 @@
+# Nuxt / Nitro
+.output
+.data
+.nuxt
+.nitro
+.cache
+dist
+.netlify
+
+# Node
+node_modules
+npm-debug.log*
+
+# Misc
+.DS_Store
+.env
+.env.*
+!.env.example
+
+# the Excel list and the generated log contain names: they live in the private HF repository
+*.xlsx
+*.xls
+pasta.json

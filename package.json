@@ -1,0 +1,31 @@
+{
+  "name": "femto-pasta",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "nuxt dev",
+    "build": "nuxt build",
+    "preview": "nuxt preview",
+    "typecheck": "nuxt typecheck",
+    "test": "vitest run",
+    "import-excel": "node scripts/import-excel.mjs",
+    "postinstall": "nuxt prepare"
+  },
+  "dependencies": {
+    "nuxt": "^4.5.2",
+    "nuxt-auth-utils": "^0.5.32",
+    "qrcode": "^1.5.4",
+    "vue": "^3.5.43",
+    "vue-router": "^5.3.1"
+  },
+  "devDependencies": {
+    "@types/qrcode": "^1.5.5",
+    "exceljs": "^4.4.0",
+    "typescript": "^5.9.0",
+    "vitest": "^3.2.7",
+    "vue-tsc": "^3.0.0"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

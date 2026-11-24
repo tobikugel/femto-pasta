@@ -1,0 +1,15 @@
+# The pages are static files; the server API (server/: login, the pasta log on Hugging Face)
+# becomes a Netlify function. Its settings are environment variables
+# (Site configuration → Environment variables, see .env.example):
+# NUXT_SESSION_PASSWORD, NUXT_PASTA_PASSWORD, NUXT_HF_TOKEN, NUXT_HF_REPO (optional NUXT_HF_FILE, NUXT_HF_BRANCH)
+[build]
+  command = "npm run build"
+  publish = "dist"
+
+[build.environment]
+  NODE_VERSION = "22"
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Robots-Tag = "noindex, nofollow, noai, noimageai"
