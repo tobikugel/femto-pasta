@@ -21,6 +21,8 @@ const g = computed(() => {
   const bars = props.days.map((d, i) => ({ d, x: M.l + i * step + gap / 2, w: step - gap, y: y(d.servings) }))
   const every = Math.max(1, Math.ceil(n / Math.max(1, Math.floor((width.value - M.l) / 64))))
   const labels = bars.filter((_, i) => i % every === 0 || i === n - 1).map(b => ({ x: b.x + b.w / 2, t: shortDate(b.d.date) }))
+  // keep the last date; drop the one before it when they would overlap
+  if (labels.length > 1 && labels[labels.length - 1]!.x - labels[labels.length - 2]!.x < 56) labels.splice(labels.length - 2, 1)
   return { bars, yt, y, step, labels }
 })
 const tip = computed(() => (hover.value === null ? null : g.value.bars[hover.value]))

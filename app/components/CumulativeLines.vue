@@ -29,6 +29,7 @@ const g = computed(() => {
   const n = dates.length
   const every = Math.max(1, Math.ceil(n / Math.max(1, Math.floor((width.value - M.l - M.r) / 70))))
   const labels = dates.map((d, i) => ({ i, d })).filter(({ i }) => i % every === 0 || i === n - 1)
+  if (labels.length > 1 && x(labels[labels.length - 1]!.i) - x(labels[labels.length - 2]!.i) < 56) labels.splice(labels.length - 2, 1)
   return { lines, ends, x, y, yt, labels }
 })
 

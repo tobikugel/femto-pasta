@@ -112,7 +112,19 @@ const HDR = {
   name: /^(name|person|who|wer|eater|esser(in)?|member)$/i,
   servings: /^(servings?|portions?|portion(en)?|anzahl|count|teller|plates?|n|#)$/i,
 }
-const isTotal = s => /^(total|sum|summe|gesamt|σ|Σ)$/i.test(s)
+const isTotal = s => /^(total|sum|summe|gesamt|σ|Σ)\b/i.test(s)
+
+/** the name column left of the dates: the one headed "Name"/"Member", else the one with the most text below the header */
+function nameColumn(r, texts, firstDateCol) {
+  const byHeader = texts.findIndex((t, c) => c < firstDateCol && HDR.name.test(t))
+  if (byHeader >= 0) return byHeader
+  let best = 0, bestCount = -1
+  for (let c = 0; c < firstDateCol; c++) {
+    const n = grid.slice(r + 1).filter(row => typeof row[c] === 'string' && row[c].trim()).length
+    if (n > bestCount) { best = c; bestCount = n }
+  }
+  return best
+}
 
 function detect() {
   for (let r = 0; r < Math.min(grid.length, 15); r++) {
@@ -121,7 +133,7 @@ function detect() {
     const ci = k => texts.findIndex(t => HDR[k].test(t))
     if (ci('date') >= 0 && ci('name') >= 0) return { kind: 'long', r, cols: { date: ci('date'), name: ci('name'), servings: ci('servings') } }
     const dateCols = row.map((v, c) => (asDate(v) ? c : -1)).filter(c => c >= 0)
-    if (dateCols.length >= 2) return { kind: 'wide', r, dateCols, nameCol: row.findIndex((v, c) => !dateCols.includes(c) && c < dateCols[0]) }
+    if (dateCols.length >= 2) return { kind: 'wide', r, dateCols, nameCol: nameColumn(r, texts, dateCols[0]) }
   }
   // dates down the first column?
   for (let c = 0; c < 3; c++) {
@@ -145,7 +157,8 @@ if (layout.kind === 'long') {
 }
 else if (layout.kind === 'wide') {
   const header = grid[layout.r]
-  const nameCol = layout.nameCol >= 0 ? layout.nameCol : 0
+  const nameCol = layout.nameCol
+  console.log(`names in column ${String.fromCharCode(65 + nameCol)}, ${layout.dateCols.length} date columns in row ${layout.r + 1}`)
   for (let r = layout.r + 1; r < grid.length; r++) {
     const name = asName(grid[r][nameCol])
     if (!name || isTotal(name)) continue
