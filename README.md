@@ -14,6 +14,11 @@ servings per visit, and the group's pasta converted to 800 nm photons, Ti:Sa run
   repository history is a complete audit log (and a backup: any old version can be restored on the Hub).
   When two people submit at the same moment, the second commit is refused by the Hub (it names the commit it
   builds on) and retried on top of the first, so nothing gets lost.
+- **Credits** (page `/credits`): every serving costs the price of its day (default 2 €, changeable from a
+  date on, older pasta keeps its old price). Payments into the fund raise a member's credit, payouts
+  (e.g. money back for buying the groceries) lower it. The page shows the balance of everybody, the
+  fund, outstanding debt, how many Wednesdays each credit lasts ("runway"), and the ledger of payments.
+  Anyone with the password can log a payment or remove one; the Hugging Face history keeps everything.
 - **Submitting**: pick the pasta Wednesday (today or the last one by default, up to half a year back), yourself
   (or "+ new eater…"), and the servings (in ½ steps). Submitting again for the same day overwrites,
   "git revert" removes the entry. The browser remembers your name.
@@ -72,6 +77,13 @@ HF_TOKEN=hf_xxx HF_REPO=<you>/femto-pasta-data node scripts/import-excel.mjs pat
 or write `pasta.json` (`--out` for another file name) and upload it by hand on the Hub: repository →
 *Files and versions* → *Add file* → *Upload files*.
 
+The importer also reads the **price per serving** (a cell like `Price per noodle portion | 2` near the top of
+a sheet) and a **Payments** sheet (one row per member): the `Payment 1`, `Payment 2`, … columns are summed into
+one payment per member, and a column of credits carried over from an older list (e.g. `Credits from old GDoc`)
+becomes a separate payment. The table it prints shows servings, eaten €, paid € and balance € per member:
+compare it with the `Members` sheet. Imported payments have fixed ids, so importing again replaces them
+instead of counting them twice. `--no-payments` skips the Payments sheet.
+
 Imported entries are marked `"source": "excel"` (shown as "(excel import)" in the git log on the dashboard).
 Days that are not Wednesdays in the Excel list are kept as they are.
 
@@ -122,9 +134,17 @@ npm test
     { "date": "2026-11-18", "name": "Anna", "servings": 2, "at": "2026-11-18T12:31:05.000Z", "source": "web" },
     { "date": "2026-11-18", "name": "Ben", "servings": 1, "source": "excel" }
   ],
+  "payments": [
+    { "id": "mfz3k1-a8b2c9", "date": "2026-11-18", "name": "Ben", "amount": 20, "note": "cash", "source": "web" },
+    { "id": "excel-anna-payments", "date": "2026-11-18", "name": "Anna", "amount": -8, "source": "excel" }
+  ],
+  "prices": [{ "from": "2025-08-13", "price": 2 }],
   "updatedAt": "2026-11-18T12:31:05.000Z"
 }
 ```
+
+`amount` in €: > 0 paid into the fund, < 0 paid out. `prices`: the price per serving from `from` on
+(none: 2 €).
 
 One entry per person and day. Names match regardless of case and spaces, so "anna " and "Anna" are the same
 person. To rename someone or fix a typo, edit `pasta.json` on the Hub (*Files and versions* → `pasta.json` →
@@ -134,6 +154,8 @@ person. To rename someone or fix a typo, edit `pasta.json` on the Hub (*Files an
 
 - `server/utils/store.ts`: reading/committing `pasta.json` on Hugging Face (with the conflict retry), or the local file
 - `server/utils/auth.ts`, `server/api/login.post.ts`: the shared password and the session
+- `server/api/payments/`, `server/api/price.post.ts`: payments (add, remove) and the price per serving
+- `app/lib/credits.ts`, `app/pages/credits.vue`: balances and the credits page
 - `server/api/servings.post.ts`: one submission (validation: Wednesday, not in the future, 0–20 servings in ¼ steps)
 - `shared/utils/pasta.ts`: date helpers, upsert/normalise of the log (used by pages and server)
 - `app/lib/stats.ts`: all statistics and the physics corner (assumptions in `PHYSICS`), tested in `tests/`

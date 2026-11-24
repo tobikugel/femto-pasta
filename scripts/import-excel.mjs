@@ -11,6 +11,7 @@
 //                       (needs HF_TOKEN with write access and HF_REPO=<user>/<repo>; HF_FILE, HF_BRANCH optional)
 //   --keep-existing     when merging: entries already in the log win over the Excel ones
 //   --date YYYY-MM-DD   for a list of totals only (name | servings, no dates): the day they are booked on
+//   --no-payments       ignore a Payments sheet
 //   --dry-run           only show what was found
 //
 // Recognised layouts (detected automatically):
@@ -18,6 +19,9 @@
 //   wide-t     one row per pasta day (first column: dates), one column per person (header row: names)
 //   long       one row per entry: date | name | servings (header names in English or German)
 //   totals     name | servings (with --date)
+// Also read, when present: the price per serving ("Price per … portion | 2" near the top of a sheet) and a
+// sheet "Payments" (one row per member; columns "Payment 1", "Payment 2", … are summed into one payment per
+// member; a column of credits carried over from an older list becomes a separate payment).
 // Cells: numbers are servings; "x", "✓", "ja", "yes" count as 1; empty, 0, "-" mean absent.
 import { readFile, writeFile } from 'node:fs/promises'
 import ExcelJS from 'exceljs'
@@ -88,14 +92,18 @@ await wb.xlsx.readFile(file)
 const ws = opt('--sheet') ? wb.getWorksheet(opt('--sheet')) : wb.worksheets[0]
 if (!ws) { console.error(`no worksheet ${opt('--sheet') ?? ''}; sheets: ${wb.worksheets.map(w => w.name).join(', ')}`); process.exit(1) }
 
-/** the sheet as a 2-D array of plain values (1-based rows/columns flattened to 0-based) */
-const grid = []
-ws.eachRow({ includeEmpty: true }, (row, r) => {
-  const cells = []
-  row.eachCell({ includeEmpty: true }, (c, col) => { cells[col - 1] = plain(c.value) })
-  grid[r - 1] = cells
-})
-for (let r = 0; r < grid.length; r++) grid[r] ??= []
+/** a sheet as a 2-D array of plain values (1-based rows/columns flattened to 0-based) */
+function sheetGrid(sheet) {
+  const g = []
+  sheet.eachRow({ includeEmpty: true }, (row, r) => {
+    const cells = []
+    row.eachCell({ includeEmpty: true }, (c, col) => { cells[col - 1] = plain(c.value) })
+    g[r - 1] = cells
+  })
+  for (let r = 0; r < g.length; r++) g[r] ??= []
+  return g
+}
+const grid = sheetGrid(ws)
 
 const entries = []
 const people = []
@@ -185,6 +193,51 @@ else {
   }
 }
 
+// ---------- price and payments (optional) ----------
+
+const firstDate = [...new Set(entries.map(e => e.date))].sort()[0] ?? new Date().toISOString().slice(0, 10)
+const lastDate = [...new Set(entries.map(e => e.date))].sort().at(-1) ?? firstDate
+const prices = []
+const payments = []
+const money = n => (typeof n === 'number' && Number.isFinite(n) ? Math.round(n * 100) / 100 : 0)
+
+// "Price per … portion | 2" near the top of any sheet
+price: for (const sheet of wb.worksheets) {
+  const g = sheetGrid(sheet)
+  for (const row of g.slice(0, 12)) {
+    const c = row.findIndex(v => typeof v === 'string' && /price|preis/i.test(v))
+    const n = c >= 0 ? row.slice(c + 1).find(v => typeof v === 'number' && v > 0 && v < 50) : undefined
+    if (n !== undefined) { prices.push({ from: firstDate, price: money(n) }); break price }
+  }
+}
+
+// a sheet called Payments / Zahlungen: one row per member, columns "Payment 1", "Payment 2", … and
+// optionally a column of credits carried over from an older list
+const paySheet = wb.worksheets.find(w => w !== ws && /payment|zahlung|einzahlung/i.test(w.name))
+if (paySheet && !flag('--no-payments')) {
+  const g = sheetGrid(paySheet)
+  const hr = g.findIndex(row => row.some(v => typeof v === 'string' && HDR.name.test(v.trim())) && row.some(v => typeof v === 'string' && /payment|zahlung/i.test(v)))
+  if (hr >= 0) {
+    const h = g[hr].map(v => (typeof v === 'string' ? v.trim() : ''))
+    const nc = h.findIndex(t => HDR.name.test(t))
+    const carry = h.map((t, c) => (/old|carr|previous|übertrag|alt/i.test(t) ? c : -1)).filter(c => c >= 0)
+    const pays = h.map((t, c) => (/^(payment|zahlung)\s*\d+/i.test(t) ? c : -1)).filter(c => c >= 0)
+    for (let r = hr + 1; r < g.length; r++) {
+      const name = asName(g[r][nc])
+      if (!name || isTotal(name)) continue
+      addPerson(name)
+      const slug = name.toLowerCase().replace(/[^\p{L}\p{N}]+/gu, '-')
+      const old = money(carry.reduce((s, c) => s + money(g[r][c]), 0))
+      const list = pays.map(c => money(g[r][c])).filter(x => x !== 0)
+      const sum = money(list.reduce((s, x) => s + x, 0))
+      if (old) payments.push({ id: `excel-${slug}-carryover`, date: firstDate, name, amount: old, note: 'credit carried over from the old list', source: 'excel' })
+      if (sum) payments.push({ id: `excel-${slug}-payments`, date: lastDate, name, amount: sum, note: `${list.length} payment${list.length === 1 ? '' : 's'} from the Excel list (net)`, source: 'excel' })
+    }
+    console.log(`sheet "${paySheet.name}": ${payments.length} payment entries (${carry.length ? 'carried-over credits + ' : ''}${pays.length} payment columns, summed per member)`)
+  }
+}
+if (prices.length) console.log(`price per serving: ${prices[0].price} € (from ${prices[0].from})`)
+
 // ---------- summary ----------
 
 const dates = [...new Set(entries.map(e => e.date))].sort()
@@ -194,14 +247,19 @@ console.log(`found ${people.length} people, ${entries.length} entries on ${dates
 if (nonWed.length) console.log(`note: ${nonWed.length} day(s) are not Wednesdays: ${nonWed.slice(0, 8).join(', ')}${nonWed.length > 8 ? ' …' : ''} (kept as they are)`)
 for (const w of warnings.slice(0, 20)) console.log(`warning: ${w}`)
 if (warnings.length > 20) console.log(`… and ${warnings.length - 20} more warnings`)
-const totals = Object.fromEntries(people.map(p => [p, entries.filter(e => e.name === p).reduce((s, e) => s + e.servings, 0)]))
+const price = prices[0]?.price ?? 2
+const totals = Object.fromEntries(people.map((p) => {
+  const servings = entries.filter(e => e.name === p).reduce((s, e) => s + e.servings, 0)
+  const paid = money(payments.filter(x => x.name === p).reduce((s, x) => s + x.amount, 0))
+  return [p, payments.length ? { servings, 'eaten €': money(servings * price), 'paid €': paid, 'balance €': money(paid - servings * price) } : { servings }]
+}))
 console.table(totals)
 if (flag('--dry-run')) process.exit(0)
 
 // ---------- merging ----------
 
 function merge(base) {
-  const log = { version: 1, people: [...(base.people ?? [])], entries: [...(base.entries ?? [])] }
+  const log = { version: 1, people: [...(base.people ?? [])], entries: [...(base.entries ?? [])], payments: [...(base.payments ?? [])], prices: [...(base.prices ?? [])] }
   const canon = n => log.people.find(p => p.toLowerCase() === n.toLowerCase()) ?? n
   for (const p of people) if (!log.people.some(q => q.toLowerCase() === p.toLowerCase())) log.people.push(p)
   let added = 0, replaced = 0, kept = 0
@@ -213,6 +271,17 @@ function merge(base) {
     else { log.entries[i] = { ...e, name }; replaced++ }
   }
   log.entries.sort((a, b) => a.date.localeCompare(b.date) || a.name.localeCompare(b.name))
+  // imported payments have fixed ids: a re-import replaces them instead of adding them twice
+  for (const p of payments) {
+    const name = canon(p.name)
+    const i = log.payments.findIndex(x => x.id === p.id)
+    if (i >= 0) log.payments[i] = { ...p, name }
+    else log.payments.push({ ...p, name })
+  }
+  log.payments.sort((a, b) => a.date.localeCompare(b.date))
+  for (const p of prices) if (!log.prices.some(x => x.from === p.from)) log.prices.push(p)
+  log.prices.sort((a, b) => a.from.localeCompare(b.from))
+  if (payments.length || prices.length) console.log(`merge: ${payments.length} payments, ${prices.length} price(s)`)
   log.updatedAt = new Date().toISOString()
   console.log(`merge: ${added} added, ${replaced} replaced, ${kept} kept`)
   return log

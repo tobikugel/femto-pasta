@@ -3,7 +3,6 @@ import { computeStats, fmt } from '~/lib/stats'
 import { shortDate } from '~/lib/scale'
 
 const { log, error, loading, load } = usePasta()
-const { clear } = useUserSession()
 onMounted(load)
 
 const stats = computed(() => (log.value ? computeStats(log.value) : null))
@@ -19,38 +18,12 @@ const busFactor = computed(() => {
   return 0
 })
 
-const quotes = [
-  'Al dente is a boundary condition.',
-  'Pasta is conserved. Mostly.',
-  'Σ servings → ∞ as t → Wednesday.',
-  'Heisenberg: you can know the sauce or the shape, never both.',
-  'Pulse duration: 30 fs. Lunch duration: 30 min.',
-  'Spaghetti are just very long, very slow photons.',
-]
-const quote = quotes[Math.floor(Date.now() / 86_400_000) % quotes.length]
 
-async function logout() {
-  await clear()
-  await navigateTo('/login')
-}
 </script>
 
 <template>
   <div class="wrap">
-    <header class="top">
-      <div class="brand">
-        <span class="logo" aria-hidden="true">🍝</span>
-        <div>
-          <h1>femto<span class="accent">-pasta</span></h1>
-          <div class="sub">// {{ quote }}</div>
-        </div>
-      </div>
-      <nav class="no-print">
-        <button class="ghost" :disabled="loading" title="reload" @click="load">⟳ fetch</button>
-        <NuxtLink to="/qr" class="btn ghost">▦ QR</NuxtLink>
-        <button class="ghost" @click="logout">exit</button>
-      </nav>
-    </header>
+    <AppHeader />
 
     <p v-if="error" class="card err">error: {{ error }}</p>
 
@@ -120,13 +93,6 @@ async function logout() {
 </template>
 
 <style scoped>
-.top { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 22px 0 18px; flex-wrap: wrap; }
-.brand { display: flex; align-items: center; gap: 14px; }
-.logo { font-size: 38px; filter: drop-shadow(0 0 10px rgba(243,210,122,.3)); }
-h1 { font-size: 26px; }
-.accent { color: var(--pesto); }
-nav { display: flex; gap: 6px; }
-nav .btn { text-decoration: none; }
 .section { margin-top: 16px; }
 footer { margin-top: 32px; text-align: center; }
 </style>

@@ -1,10 +1,14 @@
 // Helpers used by the pages and the server alike (auto-imported from shared/utils)
-import type { PastaEntry, PastaLog } from '../types/pasta'
+import type { PastaEntry, PastaLog, PastaPayment, PastaPrice } from '../types/pasta'
 
 export const MAX_SERVINGS = 20
 export const MAX_NAME_LENGTH = 40
+export const MAX_AMOUNT = 1000
+export const MAX_NOTE_LENGTH = 80
+/** € per serving when no price was set */
+export const DEFAULT_PRICE = 2
 
-export const emptyLog = (): PastaLog => ({ version: 1, people: [], entries: [] })
+export const emptyLog = (): PastaLog => ({ version: 1, people: [], entries: [], payments: [], prices: [] })
 
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/
 
@@ -71,6 +75,39 @@ export function upsertEntry(log: PastaLog, e: PastaEntry): PastaLog {
   return log
 }
 
+/** € with cents, within ±MAX_AMOUNT, not 0 */
+export function validAmount(x: unknown): x is number {
+  return typeof x === 'number' && Number.isFinite(x) && x !== 0 && Math.abs(x) <= MAX_AMOUNT && Math.abs(Math.round(x * 100) - x * 100) < 1e-6
+}
+
+export const validPrice = (x: unknown): x is number => validAmount(x) && x > 0
+
+/** the price of a serving on a day */
+export function priceOn(prices: PastaPrice[], date: string): number {
+  let p = DEFAULT_PRICE
+  for (const x of prices) if (x.from <= date) p = x.price
+  return p
+}
+
+/** adds a payment (a new person is added to the list); replaces one with the same id. Mutates and returns the log. */
+export function addPayment(log: PastaLog, pay: PastaPayment): PastaLog {
+  const name = canonicalName(log.people, pay.name)
+  if (!log.people.includes(name)) log.people.push(name)
+  const i = log.payments.findIndex(x => x.id === pay.id)
+  if (i >= 0) log.payments[i] = { ...pay, name }
+  else log.payments.push({ ...pay, name })
+  log.payments.sort((a, b) => a.date.localeCompare(b.date) || (a.at ?? '').localeCompare(b.at ?? ''))
+  return log
+}
+
+/** sets the price from a day on (replacing a price set for the same day). Mutates and returns the log. */
+export function setPrice(log: PastaLog, from: string, price: number): PastaLog {
+  log.prices = [...log.prices.filter(p => p.from !== from), { from, price }].sort((a, b) => a.from.localeCompare(b.from))
+  return log
+}
+
+export const newId = () => `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`
+
 /** checks a log read from the repository (or an import) and drops what is broken */
 export function normalizeLog(raw: unknown): PastaLog {
   const log = emptyLog()
@@ -82,6 +119,21 @@ export function normalizeLog(raw: unknown): PastaLog {
   for (const e of Array.isArray(r.entries) ? r.entries : []) {
     if (!e || typeof e.name !== 'string' || typeof e.date !== 'string' || !parseIsoDate(e.date) || !validServings(e.servings) || e.servings === 0) continue
     upsertEntry(log, { date: e.date, name: e.name, servings: e.servings, ...(e.at ? { at: e.at } : {}), ...(e.source ? { source: e.source } : {}) })
+  }
+  for (const p of Array.isArray(r.payments) ? r.payments : []) {
+    if (!p || typeof p.name !== 'string' || !cleanName(p.name) || typeof p.date !== 'string' || !parseIsoDate(p.date) || !validAmount(p.amount)) continue
+    addPayment(log, {
+      id: typeof p.id === 'string' && p.id ? p.id : newId(),
+      date: p.date,
+      name: cleanName(p.name),
+      amount: p.amount,
+      ...(typeof p.note === 'string' && p.note ? { note: p.note.slice(0, MAX_NOTE_LENGTH) } : {}),
+      ...(p.at ? { at: p.at } : {}),
+      ...(p.source ? { source: p.source } : {}),
+    })
+  }
+  for (const p of Array.isArray(r.prices) ? r.prices : []) {
+    if (p && typeof p.from === 'string' && parseIsoDate(p.from) && validPrice(p.price)) setPrice(log, p.from, p.price)
   }
   if (typeof r.updatedAt === 'string') log.updatedAt = r.updatedAt
   return log

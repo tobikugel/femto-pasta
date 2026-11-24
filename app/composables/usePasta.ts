@@ -29,5 +29,17 @@ export function usePasta() {
     log.value = await handle($fetch<PastaLog>('/api/servings', { method: 'POST', body: { date, name, servings } }))
   }
 
-  return { log, error, loading, load, submit }
+  async function pay(date: string, name: string, amount: number, note: string) {
+    log.value = await handle($fetch<PastaLog>('/api/payments', { method: 'POST', body: { date, name, amount, note } }))
+  }
+
+  async function removePayment(id: string) {
+    log.value = await handle($fetch<PastaLog>(`/api/payments/${encodeURIComponent(id)}`, { method: 'DELETE' }))
+  }
+
+  async function changePrice(from: string, price: number) {
+    log.value = await handle($fetch<PastaLog>('/api/price', { method: 'POST', body: { from, price } }))
+  }
+
+  return { log, error, loading, load, submit, pay, removePayment, changePrice }
 }
