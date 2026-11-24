@@ -19,7 +19,8 @@ export default defineNuxtConfig({
     /** NUXT_HF_BRANCH */
     hfBranch: 'main',
   },
-  nitro: { prerender: { routes: ['/', '/dashboard', '/login', '/qr', '/credits'] } },
+  // login.html instead of login/index.html: Netlify then serves /login as it is, without a redirect to /login/
+  nitro: { prerender: { routes: ['/', '/dashboard', '/login', '/qr', '/credits'], autoSubfolderIndex: false } },
   css: ['~/assets/css/main.css'],
   app: {
     head: {

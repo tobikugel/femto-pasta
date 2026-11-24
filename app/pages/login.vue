@@ -20,7 +20,9 @@ async function login(pw: string) {
     open.value = true
     await refreshSession()
     await new Promise(r => setTimeout(r, 450))   // let the shutter open
-    const next = typeof route.query.next === 'string' && route.query.next.startsWith('/') ? route.query.next : '/'
+    // only paths on this site, never back to the login page itself
+    const raw = typeof route.query.next === 'string' ? route.query.next.replace(/\/+$/, '') : ''
+    const next = raw.startsWith('/') && !raw.startsWith('//') && raw !== '/login' ? raw : '/'
     await navigateTo(next, { replace: true })
   }
   catch (e: any) {
@@ -33,7 +35,12 @@ async function login(pw: string) {
   }
 }
 
-onMounted(() => {
+onMounted(async () => {
+  // already logged in (e.g. scanned the QR code twice): straight on
+  if (useUserSession().loggedIn.value) {
+    const raw = typeof route.query.next === 'string' ? route.query.next.replace(/\/+$/, '') : ''
+    return navigateTo(raw.startsWith('/') && !raw.startsWith('//') && raw !== '/login' ? raw : '/', { replace: true })
+  }
   const timer = setInterval(() => {
     if (++done.value >= checks.length) clearInterval(timer)
   }, 220)
