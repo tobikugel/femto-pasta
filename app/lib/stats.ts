@@ -243,36 +243,36 @@ function badges(people: PersonStats[], days: DayStats[]): Badge[] {
   const worst = <T>(xs: T[], f: (x: T) => number) => xs.reduce((b, x) => (f(x) < f(b) ? x : b))
 
   const king = people[0]!
-  out.push({ icon: '👑', title: 'Carbonara Kaiser', who: king.name, why: `${fmt(king.servings)} servings in total` })
+  out.push({ icon: '🔆', title: 'Peak Power', who: king.name, why: `${fmt(king.servings)} servings in total` })
 
   const stomach = best(people, p => p.max)
-  out.push({ icon: '🕳️', title: 'Black Hole', who: stomach.name, why: `${fmt(stomach.max)} servings in a single sitting` })
+  out.push({ icon: '💥', title: 'Single-Shot Record', who: stomach.name, why: `${fmt(stomach.max)} servings in one pulse` })
 
   const streak = best(people, p => p.longestStreak)
-  if (streak.longestStreak > 1) out.push({ icon: '🔁', title: 'Phase-Locked', who: streak.name, why: `${streak.longestStreak} pasta days in a row` })
+  if (streak.longestStreak > 1) out.push({ icon: '🔁', title: 'Mode-Locked', who: streak.name, why: `${streak.longestStreak} pasta days in a row` })
 
   const regulars = people.filter(p => p.possibleDays >= 3)
   if (regulars.length) {
     const loyal = best(regulars, p => p.attendance)
-    out.push({ icon: '📡', title: 'Steady State', who: loyal.name, why: `${Math.round(loyal.attendance * 100)} % attendance` })
+    out.push({ icon: '〰️', title: 'CW Operation', who: loyal.name, why: `${Math.round(loyal.attendance * 100)} % attendance` })
   }
 
   const eff = people.filter(p => p.days >= 2)
   if (eff.length > 1) {
     const light = worst(eff, p => p.mean)
-    out.push({ icon: '🪶', title: 'Ground State', who: light.name, why: `lowest mean: ${fmt(light.mean)} servings per visit` })
+    out.push({ icon: '🪶', title: 'Below Threshold', who: light.name, why: `lowest mean: ${fmt(light.mean)} per visit` })
     const heavy = best(eff, p => p.mean)
-    if (heavy.name !== light.name) out.push({ icon: '⚡', title: 'Excited State', who: heavy.name, why: `highest mean: ${fmt(heavy.mean)} servings per visit` })
+    if (heavy.name !== light.name) out.push({ icon: '⚡', title: 'Gain Saturated', who: heavy.name, why: `highest mean: ${fmt(heavy.mean)} per visit` })
   }
 
   const newest = best(people, p => (p.first ? Date.parse(p.first) : 0))
-  if (people.length > 1 && newest.first !== days[0]?.date) out.push({ icon: '🐣', title: 'Fresh Photon', who: newest.name, why: `newest eater, since ${newest.first}` })
+  if (people.length > 1 && newest.first !== days[0]?.date) out.push({ icon: '🌱', title: 'Seed Pulse', who: newest.name, why: `newest eater, since ${newest.first}` })
 
   const lastDay = days[days.length - 1]?.date
   const ghosts = people.filter(p => p.last && lastDay && p.last !== lastDay && p.days >= 2)
   if (ghosts.length) {
     const ghost = worst(ghosts, p => Date.parse(p.last!))
-    out.push({ icon: '👻', title: 'Decayed', who: ghost.name, why: `last seen ${ghost.last}` })
+    out.push({ icon: '🌫️', title: 'Out of Alignment', who: ghost.name, why: `last seen ${ghost.last}` })
   }
   return out
 }

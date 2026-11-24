@@ -1,4 +1,4 @@
-/* femto-pasta – terminal / lab-notebook look. One dark theme (it is a terminal, after all). */
+/* femto-pasta – laser lab look: dark lab, beam glow, visible spectrum. One dark theme (lights off, goggles on). */
 :root {
   color-scheme: dark;
   --bg: #0d1110;
@@ -10,7 +10,8 @@
   --text-2: #a9b8b0;
   --muted: #6f807a;
 
-  --pesto: #7fd35a;       /* primary accent */
+  --pesto: #7fd35a;       /* primary accent: 532 nm green (and pesto) */
+  --hene: #ff4d3d;        /* 632.8 nm HeNe red */
   --pesto-dim: #3f6b2c;
   --parmesan: #f3d27a;
   --tomato: #ff6b5a;
@@ -24,7 +25,9 @@
   --s5: #d55181;
   --s-other: #6f807a;
 
-  --mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  --sans: 'Space Grotesk', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --mono: 'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  --spectrum: linear-gradient(90deg, #6a00c8 0%, #2a3bff 14%, #00a8ff 28%, #00e676 44%, #d4ff00 56%, #ffc400 66%, #ff6a00 78%, #ff1a1a 90%, #6b0000 100%);
   --radius: 10px;
 }
 
@@ -33,28 +36,21 @@ html, body { margin: 0; }
 body {
   background: var(--bg);
   background-image:
-    radial-gradient(circle at 20% -10%, rgba(127, 211, 90, .08), transparent 45%),
-    radial-gradient(circle at 110% 30%, rgba(243, 210, 122, .05), transparent 40%);
+    radial-gradient(ellipse at 15% -10%, rgba(127, 211, 90, .09), transparent 45%),
+    radial-gradient(ellipse at 105% 25%, rgba(255, 77, 61, .07), transparent 40%);
   background-attachment: fixed;
   color: var(--text);
-  font-family: var(--mono);
-  font-size: 14px;
+  font-family: var(--sans);
+  font-size: 14.5px;
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
-}
-/* faint CRT scanlines */
-body::after {
-  content: '';
-  position: fixed; inset: 0;
-  pointer-events: none;
-  background: repeating-linear-gradient(to bottom, rgba(255,255,255,.018) 0 1px, transparent 1px 3px);
-  z-index: 100;
 }
 
 a { color: var(--pesto); }
 h1, h2, h3 { font-weight: 800; margin: 0; letter-spacing: -.01em; }
-h2 { font-size: 15px; text-transform: uppercase; letter-spacing: .08em; color: var(--text-2); }
-h2::before { content: '## '; color: var(--pesto); }
+h2 { font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: .12em; color: var(--text-2); display: flex; align-items: center; gap: 10px; }
+/* a beam spot in front of every section title */
+h2::before { content: ''; flex: 0 0 auto; width: 9px; height: 9px; border-radius: 50%; background: var(--pesto); box-shadow: 0 0 6px 1px var(--pesto), 0 0 16px 2px rgba(127,211,90,.45); }
 code, kbd { font-family: var(--mono); }
 
 .wrap { max-width: 1180px; margin: 0 auto; padding: 0 16px 64px; }
@@ -111,7 +107,7 @@ label { color: var(--text-2); font-size: 12px; display: block; margin-bottom: 4p
 
 .err { color: var(--tomato); }
 .ok { color: var(--pesto); }
-.num { font-variant-numeric: tabular-nums; }
+.num { font-family: var(--mono); font-variant-numeric: tabular-nums; }
 
 table.data { width: 100%; border-collapse: collapse; font-size: 13px; }
 table.data th { text-align: left; color: var(--muted); font-weight: 400; border-bottom: 1px solid var(--border); padding: 6px 8px; white-space: nowrap; }
@@ -141,6 +137,5 @@ table.data td.r, table.data th.r { text-align: right; }
 
 @media print {
   body { background: #fff; color: #000; }
-  body::after { display: none; }
   .no-print { display: none !important; }
 }

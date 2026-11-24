@@ -41,7 +41,7 @@ function enter(ev: MouseEvent, name: string, date: string, v: number) {
       </table>
     </div>
     <div v-if="hover" class="tip" :style="{ left: `${hover.x}px`, top: `${hover.y}px` }">
-      <b>{{ hover.name }}</b> · {{ shortDate(hover.date, true) }}<span class="sub">{{ hover.v ? `${fmt(hover.v)} servings` : 'absent (or lying)' }}</span>
+      <b>{{ hover.name }}</b> · {{ shortDate(hover.date, true) }}<span class="sub">{{ hover.v ? `${fmt(hover.v)} servings` : 'no shot fired' }}</span>
     </div>
     <p class="sub scale">0 <span class="cell" style="background: var(--surface-2)" /><span class="ramp" /> {{ fmt(max) }} servings · one column per pasta day</p>
   </div>

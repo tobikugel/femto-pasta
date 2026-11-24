@@ -25,17 +25,17 @@ onMounted(() => {
 })
 async function submitPayment() {
   const amount = Number(String(form.amount).replace(',', '.'))
-  if (!form.name || !(amount > 0)) { msg.value = { ok: false, text: 'error: name and a positive amount, please' }; return }
+  if (!form.name || !(amount > 0)) { msg.value = { ok: false, text: 'Name and a positive amount, please.' }; return }
   busy.value = true
   msg.value = null
   try {
     const signed = form.kind === 'in' ? amount : -amount
     await pay(form.date, form.name, signed, form.note)
-    msg.value = { ok: true, text: `ledger += ${form.name} ${euro(signed, true)}` }
+    msg.value = { ok: true, text: `Logged: ${form.name} ${euro(signed, true)}` }
     form.amount = ''
     form.note = ''
   }
-  catch (e: any) { msg.value = { ok: false, text: `error: ${e?.statusMessage || e?.message || 'failed'}` } }
+  catch (e: any) { msg.value = { ok: false, text: `Misfire: ${e?.statusMessage || e?.message || 'failed'}` } }
   finally { busy.value = false }
 }
 async function remove(id: string, label: string) {
@@ -52,20 +52,20 @@ async function submitPrice() {
   priceMsg.value = ''
   try {
     await changePrice(priceForm.from, p)
-    priceMsg.value = `price := ${euro(p)} from ${priceForm.from}`
+    priceMsg.value = `New price: ${euro(p)} from ${priceForm.from}`
     priceForm.price = ''
   }
-  catch (e: any) { priceMsg.value = `error: ${e?.statusMessage || 'failed'}` }
+  catch (e: any) { priceMsg.value = `Misfire: ${e?.statusMessage || 'failed'}` }
 }
 
 const status = (b: number) => (b < 0 ? '💸 owes' : b > 0 ? '✓ credit' : '= even')
-const runway = (r: number | null) => (r === null ? '—' : r >= 52 ? '≥ 1 year' : `${Math.floor(r)} Wed`)
+const runway = (r: number | null) => (r === null ? '–' : r >= 52 ? '≥ 1 year' : `${Math.floor(r)} Wed`)
 </script>
 
 <template>
   <div class="wrap">
     <AppHeader />
-    <p v-if="error" class="card err">error: {{ error }}</p>
+    <p v-if="error" class="card err">Beam lost: {{ error }}</p>
 
     <template v-if="credits">
       <div class="grid tiles">
@@ -76,22 +76,22 @@ const runway = (r: number | null) => (r === null ? '—' : r >= 52 ? '≥ 1 year
       </div>
 
       <section class="card section">
-        <h2>balance sheet</h2>
+        <h2>Energy balance – who owes, who has credit</h2>
         <BalanceBars :accounts="credits.accounts" />
         <p v-if="worst" class="sub debt">
-          Pasta debt ceiling reached by <b>{{ worst.name }}</b>: {{ euro(worst.balance) }} ≈ {{ fmt(-worst.balance / credits.price, 1) }} unpaid servings
+          Damage threshold reached by <b>{{ worst.name }}</b>: {{ euro(worst.balance) }} ≈ {{ fmt(-worst.balance / credits.price, 1) }} unpaid servings
           ≈ {{ fmt(-worst.balance / credits.price * 125 / 1000, 2) }} kg of spaghetti.
         </p>
       </section>
 
       <div class="grid cols-2 section">
         <section class="card">
-          <h2>git commit --amount</h2>
+          <h2>Charge the capacitor bank – log a payment</h2>
           <form class="form" @submit.prevent="submitPayment">
             <div>
               <label for="pname">member</label>
               <select id="pname" v-model="form.name">
-                <option value="" disabled>— who? —</option>
+                <option value="" disabled>– who? –</option>
                 <option v-for="p in people" :key="p" :value="p">{{ p }}</option>
               </select>
             </div>
@@ -114,14 +114,14 @@ const runway = (r: number | null) => (r === null ? '—' : r >= 52 ? '≥ 1 year
               <label for="note">note (optional)</label>
               <input id="note" v-model="form.note" :maxlength="maxNote" placeholder="cash to Robert, groceries Hofer, …">
             </div>
-            <button class="primary" :disabled="busy">{{ busy ? 'pushing…' : 'commit' }}</button>
+            <button class="primary" :disabled="busy">{{ busy ? 'Charging…' : 'Log payment' }}</button>
           </form>
           <p v-if="msg" :class="msg.ok ? 'ok' : 'err'" class="msg">{{ msg.text }}</p>
           <p class="sub">"Paid out" is money given back to someone, e.g. for buying the groceries out of their own pocket.</p>
         </section>
 
         <section class="card">
-          <h2>price per serving</h2>
+          <h2>Price per serving</h2>
           <table class="data">
             <thead><tr><th>from</th><th class="r">€ / serving</th></tr></thead>
             <tbody>
@@ -140,13 +140,13 @@ const runway = (r: number | null) => (r === null ? '—' : r >= 52 ? '≥ 1 year
             </div>
             <button :disabled="!priceForm.price">set</button>
           </form>
-          <p v-if="priceMsg" class="msg" :class="priceMsg.startsWith('error') ? 'err' : 'ok'">{{ priceMsg }}</p>
+          <p v-if="priceMsg" class="msg" :class="priceMsg.startsWith('Misfire') ? 'err' : 'ok'">{{ priceMsg }}</p>
           <p class="sub">Pasta eaten before that day keeps its old price.</p>
         </section>
       </div>
 
       <section class="card section">
-        <h2>accounts</h2>
+        <h2>Accounts</h2>
         <div class="scroll-x">
           <table class="data">
             <thead>
@@ -172,20 +172,20 @@ const runway = (r: number | null) => (r === null ? '—' : r >= 52 ? '≥ 1 year
       </section>
 
       <section class="card section">
-        <h2>ledger</h2>
+        <h2>Payment log</h2>
         <p v-if="!payments.length" class="sub">No payments yet.</p>
         <div class="ledger">
           <div v-for="p in payments" :key="p.id" class="line">
             <span class="d">{{ p.date }}</span>
             <span class="who">{{ p.name }}</span>
             <span class="amt num" :class="{ neg: p.amount < 0 }">{{ euro(p.amount, true) }}</span>
-            <span class="note">{{ p.note }}<template v-if="p.source === 'excel'"> (excel import)</template></span>
+            <span class="note">{{ p.note }}<template v-if="p.source === 'excel'"> (from the Excel list)</template></span>
             <button class="ghost del" title="remove" @click="remove(p.id, `${p.name} ${euro(p.amount, true)}`)">✕</button>
           </div>
         </div>
       </section>
     </template>
-    <p v-else-if="loading" class="sub">counting coins<span class="blink">_</span></p>
+    <p v-else-if="loading" class="sub">calibrating the power meter<span class="blink">…</span></p>
   </div>
 </template>
 

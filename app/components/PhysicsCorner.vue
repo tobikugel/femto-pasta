@@ -12,7 +12,7 @@ const rows = computed(() => {
     { k: 'Ti:Sa runtime', v: duration(p.laserSeconds), n: `${sci(p.laserPulses)} pulses of 1 mJ at 1 kHz` },
     { k: 'spaghetti length', v: si(p.metres, 'm'), n: `light needs ${si(p.lightSeconds, 's')} for that` },
     { k: 'glucose units', v: sci(p.glucoseUnits), n: `${fmt(p.glucoseMol, 1)} mol of starch monomers` },
-    { k: 'human idle time', v: duration(p.humanSeconds), n: `one physicist at ${PHYSICS.humanPower} W` },
+    { k: 'physicist runtime', v: duration(p.humanSeconds), n: `one physicist idling at ${PHYSICS.humanPower} W` },
     { k: 'E = mc²', v: si(p.restEnergy, 'J'), n: `≈ ${sci(p.restEnergy / 4.184e15)} Mt TNT, if fully annihilated` },
   ]
 })

@@ -76,6 +76,6 @@ describe('computeStats', () => {
     expect(s.nextMilestone?.date).toBe('2026-11-25')
   })
   it('badges', () => {
-    expect(s.badges.find(b => b.title === 'Carbonara Kaiser')?.who).toBe('Anna')
+    expect(s.badges.find(b => b.title === 'Peak Power')?.who).toBe('Anna')
   })
 })

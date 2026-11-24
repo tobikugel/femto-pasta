@@ -6,7 +6,7 @@ servings per visit, and the group's pasta converted to 800 nm photons, Ti:Sa run
 
 - **Nuxt 4**, the same setup as `3d-vmi`: the pages are static files (`ssr: false`), the server API in
   `server/` becomes a **Netlify** function.
-- **Access**: the shared password (`NUXT_PASTA_PASSWORD`, e.g. `pasta-pesto`), or the QR code from the page
+- **Access**: the shared password (`NUXT_PASTA_PASSWORD`, default `pasta-pesto` when the variable is not set), or the QR code from the page
   `/qr`, which links to `/login?key=<password>` and logs in at once. A login lasts 180 days. Changing the
   password logs everybody out and makes old printed QR codes useless.
 - **Data**: one JSON file, `pasta.json`, in a **private Hugging Face dataset repository**. The server reads it

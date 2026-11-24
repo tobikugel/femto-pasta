@@ -1,6 +1,6 @@
 <script setup lang="ts">
 // "I had pasta": pick the Wednesday, yourself and the number of servings. Re-submitting overwrites.
-import { fmt } from '~/lib/stats'
+import { fmt, physics, sci } from '~/lib/stats'
 import { shortDate } from '~/lib/scale'
 
 const { log, submit } = usePasta()
@@ -36,7 +36,7 @@ watch(existing, (e) => { if (e) servings.value = e.servings })
 const step = (d: number) => { servings.value = Math.min(MAX_SERVINGS, Math.max(0.5, servings.value + d)) }
 
 async function send(n: number) {
-  if (!who.value) { msg.value = { ok: false, text: 'error: who are you?' }; return }
+  if (!who.value) { msg.value = { ok: false, text: 'Who are you? Pick your name first.' }; return }
   busy.value = true
   msg.value = null
   try {
@@ -44,10 +44,10 @@ async function send(n: number) {
     try { localStorage.setItem(LAST_NAME, canonicalName(log.value?.people ?? [], who.value)) }
     catch { /* storage blocked */ }
     if (name.value === NEW) { name.value = canonicalName(log.value?.people ?? [], who.value); newName.value = '' }
-    msg.value = { ok: true, text: n ? `[main ${Math.random().toString(16).slice(2, 9)}] ${who.value} += ${fmt(n)} 🍝 — Buon appetito!` : `reverted: ${who.value} on ${date.value}` }
+    msg.value = { ok: true, text: n ? `Pulse delivered: ${who.value} × ${fmt(n)} serving${n === 1 ? '' : 's'} ≈ ${sci(physics(n).photons, 1)} photons of 800 nm. Buon appetito!` : `Beam blocked: ${who.value} removed from ${date.value}` }
   }
   catch (e: any) {
-    msg.value = { ok: false, text: `error: ${e?.statusMessage || e?.message || 'submission failed'}` }
+    msg.value = { ok: false, text: `Misfire: ${e?.statusMessage || e?.message || 'submission failed'}` }
   }
   finally { busy.value = false }
 }
@@ -55,18 +55,18 @@ async function send(n: number) {
 
 <template>
   <section class="card submit">
-    <h2>git commit -m "pasta"</h2>
+    <h2>Fire a pulse – log your servings</h2>
     <form class="form" @submit.prevent="send(servings)">
       <div>
         <label for="date">pasta day</label>
         <select id="date" v-model="date">
-          <option v-for="d in dates" :key="d" :value="d">{{ d === today ? `today-ish · ${shortDate(d, true)}` : `Wed ${shortDate(d, true)}` }}</option>
+          <option v-for="d in dates" :key="d" :value="d">{{ d === today ? `this Wednesday · ${shortDate(d, true)}` : `Wed ${shortDate(d, true)}` }}</option>
         </select>
       </div>
       <div>
         <label for="who">eater</label>
         <select id="who" v-model="name">
-          <option value="" disabled>— who are you? —</option>
+          <option value="" disabled>– who are you? –</option>
           <option v-for="p in people" :key="p" :value="p">{{ p }}</option>
           <option :value="NEW">+ new eater…</option>
         </select>
@@ -84,11 +84,11 @@ async function send(n: number) {
         <span v-for="i in Math.ceil(servings)" :key="i" :class="{ half: i > servings }">🍝</span>
       </div>
       <div class="actions">
-        <button class="primary" :disabled="busy || !who">{{ busy ? 'pushing…' : existing ? 'amend' : 'commit' }}</button>
-        <button v-if="existing" type="button" class="ghost" :disabled="busy" @click="send(0)">git revert</button>
+        <button class="primary" :disabled="busy || !who">{{ busy ? 'Firing…' : existing ? 'Re-fire (overwrite)' : 'Fire 🍝' }}</button>
+        <button v-if="existing" type="button" class="ghost" :disabled="busy" @click="send(0)">Block beam (delete)</button>
       </div>
     </form>
-    <p v-if="existing && !msg" class="sub">{{ existing.name }} already logged {{ fmt(existing.servings) }} on {{ shortDate(existing.date) }} — committing overwrites it.</p>
+    <p v-if="existing && !msg" class="sub">{{ existing.name }} already logged {{ fmt(existing.servings) }} on {{ shortDate(existing.date) }} – firing again overwrites it.</p>
     <p v-if="msg" :class="msg.ok ? 'ok' : 'err'" class="msg">{{ msg.text }}</p>
   </section>
 </template>

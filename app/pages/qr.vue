@@ -17,24 +17,26 @@ onMounted(async () => {
 
 <template>
   <main class="wrap qrpage">
-    <p class="no-print"><NuxtLink to="/">← dashboard</NuxtLink></p>
+    <p class="no-print"><NuxtLink to="/">← Dashboard</NuxtLink></p>
     <div class="sheet">
-      <h1>🍝 femto-pasta</h1>
+      <div class="warnbar">⚠ Laser radiation · Class 4 pasta</div>
+      <h1>femto-pasta</h1>
       <p class="lead">Had pasta? Scan &amp; log your servings.</p>
       <!-- eslint-disable-next-line vue/no-v-html -->
       <div v-if="svg" class="qr" v-html="svg" />
       <p v-if="error" class="err">{{ error }}</p>
-      <p class="small">every Wednesday · Σ servings → ∞</p>
+      <p class="small">every Wednesday · λ = 800 nm · τ = 30 fs · servings → ∞</p>
     </div>
     <p class="sub no-print">Print this page (Ctrl/⌘ + P). Anyone with the code gets in, so keep it in the group's kitchen. Changing NUXT_PASTA_PASSWORD invalidates old prints.</p>
-    <button class="no-print primary" @click="print">print</button>
+    <button class="no-print primary" @click="print">Print</button>
   </main>
 </template>
 
 <style scoped>
 .qrpage { padding-top: 24px; text-align: center; }
 .sheet { background: #fff; color: #0d1110; border-radius: 16px; padding: 32px 24px; max-width: 460px; margin: 0 auto 18px; }
-.sheet h1 { font-size: 30px; }
+.sheet h1 { font-size: 30px; margin-top: 16px; }
+.warnbar { background: #f3c623; color: #111; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; padding: 8px; border-radius: 8px; border: 3px solid #111; }
 .lead { font-size: 16px; margin: 6px 0 18px; }
 .qr { width: min(320px, 100%); margin: 0 auto; }
 .qr :deep(svg) { width: 100%; height: auto; display: block; }

@@ -8,8 +8,8 @@ export default defineNuxtConfig({
   modules: ['nuxt-auth-utils'],
   runtimeConfig: {
     // server only (Netlify environment variables, or .env locally), never sent to the browser:
-    /** NUXT_PASTA_PASSWORD: the shared password of the group (the QR code logs in with it too) */
-    pastaPassword: '',
+    /** NUXT_PASTA_PASSWORD: the shared password of the group (the QR code logs in with it too); default pasta-pesto */
+    pastaPassword: 'pasta-pesto',
     /** NUXT_HF_TOKEN: a Hugging Face token with WRITE access to the data repository */
     hfToken: '',
     /** NUXT_HF_REPO: the private dataset repository, <user>/<repo> */
@@ -23,7 +23,7 @@ export default defineNuxtConfig({
   css: ['~/assets/css/main.css'],
   app: {
     head: {
-      title: 'femto-pasta // carb tracker',
+      title: 'femto-pasta · pasta laser lab',
       htmlAttrs: { lang: 'en' },
       meta: [
         { name: 'viewport', content: 'width=device-width, initial-scale=1' },
@@ -34,7 +34,7 @@ export default defineNuxtConfig({
       link: [
         { rel: 'icon', type: 'image/svg+xml', href: '/favicon.svg' },
         { rel: 'preconnect', href: 'https://fonts.googleapis.com' },
-        { rel: 'stylesheet', href: 'https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;800&display=swap' },
+        { rel: 'stylesheet', href: 'https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=Space+Grotesk:wght@400;500;700&display=swap' },
       ],
     },
   },
