@@ -25,7 +25,8 @@ servings per visit, and the group's pasta converted to 800 nm photons, Ti:Sa run
 
 ## Set up the Hugging Face repository
 
-1. **Create the repository.** On <https://huggingface.co/new-dataset>: owner = your account (or the group's
+1. **Create the repository.** (`NUXT_HF_REPO` is then `<you>/femto-pasta-data`; the repository's URL works too, and
+   a model repository instead of a dataset one works as well.) On <https://huggingface.co/new-dataset>: owner = your account (or the group's
    organisation), name e.g. `femto-pasta-data`, visibility **Private**. Nothing else is needed: the first
    submission creates `pasta.json`. (To start from the Excel list, see the next section.)
 2. **Create a token for the app.** <https://huggingface.co/settings/tokens> → *Create new token* →

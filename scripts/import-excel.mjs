@@ -295,15 +295,29 @@ if (!flag('--push')) {
   process.exit(0)
 }
 
-const token = process.env.HF_TOKEN, repo = process.env.HF_REPO
+const token = process.env.HF_TOKEN?.trim()
+// HF_REPO: user/repo, datasets/user/repo or the repository's URL (dataset or model repository)
+const rawRepo = (process.env.HF_REPO ?? '').trim()
+let repoPath = rawRepo.replace(/^https?:\/\/(www\.)?huggingface\.co\/?/i, '').replace(/[?#].*$/, '').replace(/^\/+|\/+$/g, '')
+let kind = /^datasets\//.test(repoPath) ? 'datasets' : /^models\//.test(repoPath) ? 'models' : repoPath !== rawRepo.replace(/^\/+|\/+$/g, '') ? 'models' : null
+repoPath = repoPath.replace(/^(datasets|models)\//, '')
+const repo = repoPath.split('/').slice(0, 2).join('/')
 const hfFile = process.env.HF_FILE || 'pasta.json', branch = process.env.HF_BRANCH || 'main'
-if (!token || !repo) { console.error('--push needs HF_TOKEN (write) and HF_REPO=<user>/<repo>'); process.exit(1) }
+if (!token || !/^[\w.-]+\/[\w.-]+$/.test(repo)) { console.error('--push needs HF_TOKEN (write) and HF_REPO=<user>/<repo>'); process.exit(1) }
 const HUB = 'https://huggingface.co'
 const auth = { authorization: `Bearer ${token}` }
-const rev = await fetch(`${HUB}/api/datasets/${repo}/revision/${branch}`, { headers: auth })
+let rev = await fetch(`${HUB}/api/${kind ?? 'datasets'}/${repo}/revision/${branch}`, { headers: auth })
+if (!kind) {
+  kind = 'datasets'
+  if (rev.status === 404 || rev.status === 401) {
+    const other = await fetch(`${HUB}/api/models/${repo}/revision/${branch}`, { headers: auth })
+    if (other.ok) { kind = 'models'; rev = other }
+  }
+}
+const fileBase = kind === 'datasets' ? `${HUB}/datasets/${repo}` : `${HUB}/${repo}`
 if (!rev.ok) { console.error(`Hugging Face: repository ${repo}: HTTP ${rev.status}`); process.exit(1) }
 const { sha } = await rev.json()
-const cur = await fetch(`${HUB}/datasets/${repo}/resolve/${sha}/${hfFile}`, { headers: auth })
+const cur = await fetch(`${fileBase}/resolve/${sha}/${hfFile}`, { headers: auth })
 const base = cur.ok ? await cur.json() : {}
 if (!cur.ok && cur.status !== 404) { console.error(`Hugging Face: ${hfFile}: HTTP ${cur.status}`); process.exit(1) }
 const log = merge(base)
@@ -311,6 +325,6 @@ const body = [
   { key: 'header', value: { summary: `import ${file.split('/').pop()}`, description: 'scripts/import-excel.mjs', parentCommit: sha } },
   { key: 'file', value: { path: hfFile, content: Buffer.from(`${JSON.stringify(log, null, 1)}\n`).toString('base64'), encoding: 'base64' } },
 ].map(l => JSON.stringify(l)).join('\n')
-const res = await fetch(`${HUB}/api/datasets/${repo}/commit/${branch}`, { method: 'POST', headers: { ...auth, 'content-type': 'application/x-ndjson' }, body })
+const res = await fetch(`${HUB}/api/${kind}/${repo}/commit/${branch}`, { method: 'POST', headers: { ...auth, 'content-type': 'application/x-ndjson' }, body })
 if (!res.ok) { console.error(`Hugging Face commit: HTTP ${res.status} ${await res.text()}`); process.exit(1) }
 console.log(`committed to ${repo}/${hfFile}: ${(await res.json()).commitUrl ?? 'ok'}`)
