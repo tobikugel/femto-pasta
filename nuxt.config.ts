@@ -19,7 +19,7 @@ export default defineNuxtConfig({
     /** NUXT_HF_BRANCH */
     hfBranch: 'main',
   },
-  nitro: { prerender: { routes: ['/', '/login', '/qr', '/credits'] } },
+  nitro: { prerender: { routes: ['/', '/dashboard', '/login', '/qr', '/credits'] } },
   css: ['~/assets/css/main.css'],
   app: {
     head: {

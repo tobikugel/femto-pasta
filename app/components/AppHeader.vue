@@ -31,7 +31,8 @@ async function logout() {
       </div>
     </NuxtLink>
     <nav class="no-print">
-      <NuxtLink to="/" class="btn ghost" :class="{ on: route.path === '/' }">Dashboard</NuxtLink>
+      <NuxtLink to="/" class="btn ghost" :class="{ on: route.path === '/' }">Log pasta</NuxtLink>
+      <NuxtLink to="/dashboard" class="btn ghost" :class="{ on: route.path === '/dashboard' }">Dashboard</NuxtLink>
       <NuxtLink to="/credits" class="btn ghost" :class="{ on: route.path === '/credits' }">Credits</NuxtLink>
       <NuxtLink to="/qr" class="btn ghost">QR code</NuxtLink>
       <button class="ghost" :disabled="loading" title="reload the data" @click="load">↻</button>

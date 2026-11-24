@@ -84,13 +84,13 @@ button, .btn {
 button:hover, .btn:hover { border-color: var(--pesto-dim); }
 button:active { transform: translateY(1px); }
 button:disabled { opacity: .5; cursor: not-allowed; }
-button.primary {
+button.primary, .btn.primary {
   background: var(--pesto);
   color: #0b1408;
   border-color: var(--pesto);
   font-weight: 800;
 }
-button.primary:hover { background: #95e070; }
+button.primary:hover, .btn.primary:hover { background: #95e070; }
 button.ghost { background: transparent; }
 
 input, select {
